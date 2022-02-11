@@ -4,6 +4,8 @@ __pycache__/
 
 *.so
 
+*.vscode
+
 .Python
 build/
 develop-eggs/

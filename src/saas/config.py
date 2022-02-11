@@ -5,11 +5,11 @@ def get_postgres_configs():
     db_config = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get('DB_HOST'),
-            "USER": os.environ.get('DB_USER'),
-            "PASSWORD": os.environ.get('DB_PASSWORD'),
-            "HOST": os.environ.get('DB_HOST'),
-            "PORT": os.environ.get('DB_PORT'),
+            "NAME": os.environ.get('DB_HOST', 'postgres'),
+            "USER": os.environ.get('DB_USER', 'postgres'),
+            "PASSWORD": os.environ.get('DB_PASSWORD', 'developer123'),
+            "HOST": os.environ.get('DB_HOST', 'localhost'),
+            "PORT": os.environ.get('DB_PORT', '54321'),
         }
     }
     return db_config

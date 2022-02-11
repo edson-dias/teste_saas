@@ -51,6 +51,8 @@ WSGI_APPLICATION = 'saas.wsgi.application'
 
 DATABASES = get_postgres_configs()
 
+AUTH_USER_MODEL = 'restapi.User'
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
