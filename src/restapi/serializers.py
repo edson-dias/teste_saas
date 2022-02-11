@@ -29,3 +29,9 @@ class UserSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+
+class CompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Company
+        fields = ('id', 'corporate_name', 'trade_name', 'cnpj', 'user')

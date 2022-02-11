@@ -1,7 +1,8 @@
+from datetime import date
 from django.test import TestCase
 
 from ..models import User, BaseUser, Company
-from ..serializers import UserSerializer
+from ..serializers import UserSerializer, CompanySerializer
 
 
 class UserSerializersTestCase(TestCase):
@@ -13,19 +14,8 @@ class UserSerializersTestCase(TestCase):
             email='django_framework@gmail.com',
             password='654321'
         )
-                
         User.objects.create_user(base_user)
         cls.user = User.objects.first()
-
-        company = Company(
-            corporate_name='EC LTDA',
-            trade_name='EC',
-            cnpj='12345678901234',
-        )
-        company.save()
-        company.user.add(cls.user)
-        
-        cls.company = Company.objects.first()
         cls.user_serializer = UserSerializer(instance=cls.user)
         
 
@@ -84,3 +74,71 @@ class UserSerializersTestCase(TestCase):
         if serializer.is_valid():
             serializer.save()
         self.assertNotEqual(User.objects.first().password, '123456789')
+
+
+class CompanySerializersTestCase(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        base_user = BaseUser(
+            first_name='django',
+            last_name='framework',
+            email='django_framework@gmail.com',
+            password='654321'
+        )
+                
+        User.objects.create_user(base_user)
+        cls.user = User.objects.first()
+
+        company = Company(
+            corporate_name='EC LTDA',
+            trade_name='EC',
+            cnpj='12345678901234',
+        )
+        company.save()
+        company.user.add(cls.user)
+        
+        cls.company = Company.objects.first()
+        cls.company_serializer = CompanySerializer(instance=cls.company)
+
+    def test_company_serializer_contains_expected_fields(self):
+        keys = self.company_serializer.data.keys()
+        expected_keys = ['id', 'corporate_name', 'trade_name', 'cnpj', 'user']
+        self.assertEqual(set(keys), set(expected_keys))
+    
+    def test_company_serializer_contains_expected_data(self):
+        data = self.company_serializer.data
+        self.assertEqual(data['corporate_name'], 'EC LTDA')
+        self.assertEqual(data['trade_name'], 'EC')
+        self.assertEqual(data['cnpj'], '12345678901234')
+    
+    def test_company_serializer_can_deserialize_company(self):
+        data = {
+            'corporate_name': 'new_corporate_name',
+            'trade_name': 'new_trade_name',
+            'cnpj': 'new_cnpj',
+        }
+        serializer = CompanySerializer(data=data)
+        self.assertTrue(serializer.is_valid())
+    
+    def test_company_serializer_can_create_company(self):
+        data = {
+            'corporate_name': 'new_corporate_name',
+            'trade_name': 'new_trade_name',
+            'cnpj': 'new_cnpj',
+        }
+        serializer = CompanySerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+        self.assertEqual(Company.objects.count(), 2)
+    
+    def test_company_serializer_can_update_company(self):
+        data = {
+            'corporate_name': 'new_corporate_name',
+            'trade_name': 'new_trade_name',
+            'cnpj': 'new_cnpj',
+        }
+        serializer = CompanySerializer(data=data, instance=self.company)
+        if serializer.is_valid():
+            serializer.save()
+        self.assertEqual(Company.objects.count(), 1)
+        self.assertEqual(Company.objects.first().cnpj, 'new_cnpj')
