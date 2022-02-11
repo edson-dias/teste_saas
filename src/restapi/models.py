@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 
+
 @dataclass
 class BaseUser:
     first_name: str
@@ -67,4 +68,18 @@ class User(AbstractUser):
     
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
-    
+
+
+class Company(models.Model):
+    class Meta:
+        verbose_name = 'Empresa'
+        verbose_name_plural = 'Empresas'
+
+    corporate_name = models.CharField(max_length=100)
+    trade_name = models.CharField(max_length=100)
+    cnpj = models.CharField(max_length=14, unique=True)
+    user = models.ManyToManyField(User, blank=True)
+
+    def __str__(self):
+        return self.corporate_name
+        
