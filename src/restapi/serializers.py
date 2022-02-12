@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import User, Company, BaseUser
+from .models import User, Company
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -10,13 +10,12 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {'password': {'write_only': True}}
         
     def create(self, validated_data):
-        new_user = BaseUser(
-            email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            password=validated_data['password']
-        ) 
-        return User.objects.create_user(new_user)
+        first_name = validated_data['first_name']
+        last_name = validated_data['last_name']
+        email = validated_data['email']
+        password = validated_data['password']
+        user = User.objects.create_user(first_name, last_name, email, password)
+        return user
     
     def update(self, instance, validated_data):
         instance.first_name = validated_data.get('first_name', instance.first_name)

@@ -1,18 +1,20 @@
 from django.db import IntegrityError
 from django.test import TestCase
-from ..models import User, BaseUser, Company
+from ..models import User, Company
 
 class UserModelTest(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = BaseUser(
-            first_name='django',
-            last_name='framework',
-            email='django_framework@outlook.com',
-            password='123456'
+        cls.first_name = 'django'
+        cls.last_name = 'framework'
+        cls.email = 'django_framework@outlook.com'
+        cls.password = '123456'
+        User.objects.create_user(
+            first_name=cls.first_name,
+            last_name=cls.last_name,
+            email=cls.email,
+            password=cls.password
         )
-        
-        User.objects.create_user(cls.user)
 
     def test_user_str_returns_full_name(self):
         user = User.objects.get(id=2)
@@ -31,46 +33,69 @@ class UserModelTest(TestCase):
         self.assertEqual(user.email, 'django_framework@outlook.com')
 
     def test_is_user_valid_fails_if_first_name_is_none(self):
-        self.user.first_name = None
         with self.assertRaises(TypeError):
-            User.objects.create_user(self.user)               
+            User.objects.create_user(
+                first_name=None,
+                last_name=self.last_name,
+                email=self.email,
+                password=self.password
+            )               
             
     def test_is_user_valid_fails_if_last_name_is_none(self):
-        self.user.last_name = None
         with self.assertRaises(TypeError):
-            User.objects.create_superuser(self.user)
+            User.objects.create_superuser(
+                first_name=self.first_name,
+                last_name=None,
+                email=self.email,
+                password=self.password
+            )
     
     def test_is_user_valid_fails_if_email_is_none(self):
-        self.user.email = None
         with self.assertRaises(TypeError):
-            User.objects.create_superuser(self.user)
+            User.objects.create_superuser(
+                first_name=self.first_name,
+                last_name=self.last_name,
+                email=None,
+                password=self.password
+            )
     
     def test_is_user_valid_fails_if_password_is_none(self):
-        self.user.password = None
         with self.assertRaises(TypeError):
-            User.objects.create_superuser(self.user)
+            User.objects.create_superuser(
+                first_name=self.first_name,
+                last_name=self.last_name,
+                email=self.email,
+                password=None
+            )
     
     def test_create_user_fails_if_email_is_not_unique(self):
-        self.user.email = 'django_framework@outlook.com'
         with self.assertRaises(IntegrityError):
-            User.objects.create_user(self.user)
+            User.objects.create_user(
+                first_name=self.first_name,
+                last_name=self.last_name,
+                email=self.email,
+                password=self.password
+            )
             
     def test_create_superuser_fails_if_email_is_not_unique(self):
-        self.user.email = 'django_framework@outlook.com'
         with self.assertRaises(IntegrityError):
-            User.objects.create_superuser(self.user)
+            User.objects.create_superuser(
+                first_name=self.first_name,
+                last_name=self.last_name,
+                email=self.email,
+                password=self.password
+            )
 
 
 class CompanyModelTest(TestCase):
     @classmethod
     def setUpTestData(cls):
-        base_user = BaseUser(
+        user = User.objects.create_user(
             first_name='django',
             last_name='framework',
             email='django_framework@outlook.com',
             password='1234ff56'
         )
-        user = User.objects.create_user(base_user)
         company = Company(
             corporate_name='EC LTDA',
             trade_name='EC',

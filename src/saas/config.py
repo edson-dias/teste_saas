@@ -1,4 +1,5 @@
 import os
+from django.core.management.utils import get_random_secret_key
 
 
 def get_postgres_configs():
@@ -16,5 +17,6 @@ def get_postgres_configs():
 
 
 def get_django_secret():
-    secret = os.environ.get('DJANGO_SECRET')
+    secret = os.environ.get('DJANGO_SECRET', get_random_secret_key())
     return secret
+

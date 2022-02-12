@@ -1,20 +1,18 @@
-from datetime import date
 from django.test import TestCase
 
-from ..models import User, BaseUser, Company
+from ..models import User, Company
 from ..serializers import UserSerializer, CompanySerializer
 
 
 class UserSerializersTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
-        base_user = BaseUser(
+        User.objects.create_user(
             first_name='django',
             last_name='framework',
             email='django_framework@gmail.com',
             password='654321'
         )
-        User.objects.create_user(base_user)
         cls.user = User.objects.first()
         cls.user_serializer = UserSerializer(instance=cls.user)
         
@@ -78,15 +76,13 @@ class UserSerializersTestCase(TestCase):
 
 class CompanySerializersTestCase(TestCase):
     @classmethod
-    def setUpTestData(cls):
-        base_user = BaseUser(
+    def setUpTestData(cls):    
+        User.objects.create_user(
             first_name='django',
             last_name='framework',
             email='django_framework@gmail.com',
             password='654321'
         )
-                
-        User.objects.create_user(base_user)
         cls.user = User.objects.first()
 
         company = Company(

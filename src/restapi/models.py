@@ -1,73 +1,71 @@
-from dataclasses import dataclass
-
 from django.db import models
-from django.contrib.auth.models import AbstractUser, BaseUserManager
-
-
-@dataclass
-class BaseUser:
-    first_name: str
-    last_name: str
-    email: str
-    password: str
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
 
 class UserManager(BaseUserManager):
 
     use_in_migrations = True
 
-    def _create_user(self, user, **extra_fields):
-        email = self.normalize_email(user.email)
-        user = self.model(
-            first_name=user.first_name, 
-            last_name=user.last_name, 
-            email=email, 
-            username=user.email, 
-            **extra_fields
-        )
-        user.set_password(user.password)
-        user.save(using=self._db)
-        return user
+    def create_user(self, first_name, last_name, email, password=None):
+        if self._is_user_valid(first_name, last_name, email, password):
+            user = self.model(
+                first_name=first_name,
+                last_name=last_name,
+                email=self.normalize_email(email),
+            )
+            user.set_password(password)
+            user.save(using=self._db)
+            return user
 
-    def create_user(self, user, **extra_fields):
-        extra_fields.setdefault('is_superuser', False)
-        if self.is_user_valid(user):
-            return self._create_user(user, **extra_fields)
+    def create_superuser(self, first_name, last_name, email, password):
+        if self._is_user_valid(first_name, last_name, email, password):
+            user = self.create_user(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                password=password
+            )
+            user.is_admin = True
+            user.save(using=self._db)
+            return user
 
-    def create_superuser(self, user, **extra_fields):
-        extra_fields.setdefault('is_superuser', True)
-        if self.is_user_valid(user):
-            return self._create_user(user, **extra_fields)
-
-    def is_user_valid(self, user):
-        if user.first_name is None:
-            raise TypeError("first_name is required")
-        elif user.last_name is None:
-            raise TypeError("last_name is required")
-        elif user.email is None:
-            raise TypeError("email is required")
-        elif user.password is None:
-            raise TypeError("password is required")
+    def _is_user_valid(self, first_name, last_name, email, password):
+        if first_name is None or last_name is None or email is None or password is None:
+            raise TypeError("Arguments can't be None")
+        elif first_name == '' or last_name == '' or email == '' or password == '':
+            raise TypeError("Arguments can't be empty")
         else:
             return True
 
 
-class User(AbstractUser):
+class User(AbstractBaseUser):
     class Meta:
         verbose_name = 'Usuário'
         verbose_name_plural = 'Usuários'
 
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+    first_name = models.CharField(max_length=100, blank=False, null=False)
+    last_name = models.CharField(max_length=100, blank=False, null=False)
     email = models.EmailField('e-mail', unique=True)
+    is_active = models.BooleanField(default=True)
+    is_admin = models.BooleanField(default=False)
+
+    objects = UserManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
-
-    objects = UserManager()
     
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
+    
+    def has_perm(self, perm, obj=None):
+        return True
+    
+    def has_module_perms(self):
+        return True
+
+    @property
+    def is_staff(self):
+        return self.is_admin
 
 
 class Company(models.Model):
