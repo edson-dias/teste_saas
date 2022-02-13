@@ -4,6 +4,10 @@ from .config import get_django_secret, get_postgres_configs
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = get_django_secret()
 
+CELERY_BROKER_URL = 'amqp://admin:admin123@localhost:5672'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
 DEBUG = True
 
 ALLOWED_HOSTS = []
