@@ -22,27 +22,8 @@ class UserViewSetTestCase(APITestCase):
         )
         company.user.add(cls.user)
         cls.company = company
-        cls.members_url = reverse('user-company-user')
-        cls.create_url = reverse('user-new')
-
-    def test_company_user_returns_200_with_authenticated_user(self):
-        self.client.force_authenticate(user=self.user)
-        data = {'company_id': self.company.id}
-        response = self.client.get(self.members_url, data, format='json')
-        self.client.force_authenticate(user=None)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-    
-    def test_company_user_returns_400_if_company_id_is_none(self):
-        self.client.force_authenticate(user=self.user)
-        data = {}
-        response = self.client.get(self.members_url, data, format='json')
-        self.client.force_authenticate(user=None)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-    
-    def test_company_user_returns_401_it_user_not_authenticated(self):
-        data = {'company_id': self.company.id}
-        response = self.client.get(self.members_url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        cls.create_url = reverse('user-list')
+        cls.list_url = reverse('user-companies')
 
     def test_creates_user_without_authentication_returns_201(self):
         data = {
@@ -105,13 +86,34 @@ class UserViewSetTestCase(APITestCase):
         response = self.client.post(self.create_url, data, format='json')
         self.assertEqual(count_before_post, User.objects.count() - 1)
     
+    def test_get_logged_user_companies_returns_200_with_authentication_(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(self.list_url, format='json')
+        self.client.force_authenticate(user=None)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_get_logged_user_companies_returns_only_one_company(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(self.list_url, format='json')
+        self.client.force_authenticate(user=None)
+        self.assertEqual(len(response.data), 1)
+    
+    def test_get_logged_user_companies_returns_only_logged_user_companies(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(self.list_url, format='json')
+        self.client.force_authenticate(user=None)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['corporate_name'], 'test_company')
+
+    def test_get_logged_user_companies_returns_401_when_user_is_not_logged(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.get(self.list_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    
 
 class CompanyViewSetTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.list_url = reverse('company-list')
-        cls.create_url = reverse('company-new')
-
         cls.django_user = User.objects.create_user(
             first_name='django',
             last_name='user',
@@ -124,44 +126,31 @@ class CompanyViewSetTestCase(APITestCase):
             email='user@hotmail.com',
             password='123456'
         )
-        company_django = Company(
+        cls.company_django = Company(
             corporate_name='django_company',
             trade_name='django_trade_name',
             cnpj='12345678901234'
         )
-        company_another = Company(
+        cls.company_another = Company(
             corporate_name='another_company',
             trade_name='another_trade_name',
             cnpj='11111111111111'
         )
-        company_django.save()
-        company_another.save()
-        company_django.user.add(cls.django_user)
-        company_another.user.add(cls.another_user)
+        cls.company_django.save()
+        cls.company_another.save()
+        cls.company_django.user.add(cls.django_user)
+        cls.company_another.user.add(cls.another_user)
+
+        cls.company_members_url = reverse('company-members', args=[cls.company_django.id])
+        cls.registry_member_url = reverse('company-registry-member')
+        cls.create_url = reverse('company-list')
+
 
     def setUp(self):
         self.client.force_authenticate(user=self.django_user)
     
     def tearDown(self):
         self.client.force_authenticate(user=None)
-
-    def test_list_companies_with_authentication_returns_200(self):
-        response = self.client.get(self.list_url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-    
-    def test_list_companies_returns_only_one_company(self):
-        response = self.client.get(self.list_url, format='json')
-        self.assertEqual(len(response.data), 1)
-    
-    def test_list_companies_returns_only_logged_user_companies(self):
-        response = self.client.get(self.list_url, format='json')
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['corporate_name'], 'django_company')
-
-    def test_list_companies_returns_401_when_user_is_not_logged(self):
-        self.client.force_authenticate(user=None)
-        response = self.client.get(self.list_url, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
     
     def test_creates_company_returns_201_without_authentication(self):
         self.client.force_authenticate(user=None)
@@ -185,3 +174,66 @@ class CompanyViewSetTestCase(APITestCase):
         count_before_post = Company.objects.all().count()
         response = self.client.post(self.create_url, data, format='json')
         self.assertEqual(count_before_post, Company.objects.count() - 1)
+
+    def test_get_members_from_company_returns_200_with_authenticated_user(self):
+        response = self.client.get(self.company_members_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_get_members_from_company_returns_401_if_user_not_authenticated(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.get(self.company_members_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    
+    def test_get_members_from_company_returns_only_members_from_company(self):
+        response = self.client.get(self.company_members_url, format='json')
+        self.assertEqual(len(response.data), 1)
+    
+    def test_registry_member_in_company_returns_200_with_authenticated_user(self):
+        data = {
+            'user_id': self.another_user.id,
+            'company_id': self.company_django.id
+        }
+        response = self.client.post(self.registry_member_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_registry_member_in_company_returns_401_if_user_not_authenticated(self):
+        self.client.force_authenticate(user=None)
+        data = {
+            'user_id': self.another_user.id,
+            'company_id': self.company_django.id
+        }
+        response = self.client.post(self.registry_member_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    
+    def test_registry_member_in_company_returns_400_if_user_id_is_empty(self):
+        data = {
+            'user_id': '',
+            'company_id': self.company_django.id
+        }
+        response = self.client.post(self.registry_member_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_registry_member_in_company_returns_400_if_company_id_is_empty(self):
+        data = {
+            'user_id': self.another_user.id,
+            'company_id': ''
+        }
+        response = self.client.post(self.registry_member_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    
+    def test_registry_member_in_company_returns_404_if_user_doesnt_exist(self):
+        data = {
+            'user_id': 100,
+            'company_id': self.company_django.id
+        }
+        response = self.client.post(self.registry_member_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    
+    def test_registry_member_in_company_add_user_to_company(self):
+        data = {
+            'user_id': self.another_user.id,
+            'company_id': self.company_django.id
+        }
+        qty_users_before_post = self.company_django.user.all().count()
+        self.client.post(self.registry_member_url, data, format='json')
+        self.assertNotEqual(self.company_django.user.all().count(), qty_users_before_post)
