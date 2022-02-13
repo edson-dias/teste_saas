@@ -1,3 +1,4 @@
+import requests
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -69,3 +70,20 @@ class CompanyViewSet(viewsets.ViewSet):
     
     def get_extra_action_url_map(self):
         return []
+
+
+def get_company_data_from_external_api(cnpj):
+    entrypoint = 'https://receitaws.com.br/v1/'
+    
+    url = f'{entrypoint}cnpj/{cnpj}'
+    response = requests.get(url)
+    if response.status_code == 200:
+        response = response.json()
+        data = {
+            'nome': response['nome'],
+            'fantasia': response['fantasia'],
+            'situacao': response['situacao']
+        }
+        return data
+    else:
+       raise Exception('Não foi possível obter os dados da empresa')

@@ -1,3 +1,7 @@
+from datetime import date
+
+from dateutil.relativedelta import relativedelta
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
@@ -77,7 +81,21 @@ class Company(models.Model):
     trade_name = models.CharField(max_length=100)
     cnpj = models.CharField(max_length=14, unique=True)
     user = models.ManyToManyField(User, blank=True)
-
+    status = models.CharField(max_length=100, default='Ativa')
+    last_check = models.DateTimeField(default=timezone.localtime)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
     def __str__(self):
         return self.corporate_name
-        
+
+    @property
+    def is_necessary_to_check(self):
+        return self.last_check.date() <= (date.today() - relativedelta(months=1))
+    
+    def update_company(self, corporate_name, trade_name, status):
+        self.corporate_name = corporate_name
+        self.trade_name = trade_name
+        self.status = status
+        self.last_check = timezone.localtime()
+        self.save()

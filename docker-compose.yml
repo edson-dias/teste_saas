@@ -15,6 +15,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    environment:
+    - RABBITMQ_DEFAULT_USER=admin
+    - RABBITMQ_DEFAULT_PASS=admin123
+    ports:
+        - 5672:5672
+        - 15672:15672
+    volumes:
+        - rabbitmq-data:/var/lib/rabbitmq/
+        - rabbitmq-data:/var/log/rabbitmq
 
   app:
     build:
@@ -26,6 +39,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      
     env_file:
       - ./.env
     environment:
@@ -39,6 +53,38 @@ services:
       - ./src:/src
     ports:
       - "8000:8000"
+
+  celery:
+    build:
+      context: .
+    command: sh -c "celery -A saas.celery  worker --loglevel=INFO"
+    depends_on:
+      - app
+      - rabbitmq
+    environment:
+      - DB_HOST=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=developer123
+      - DB_PORT=5432
+    volumes:
+      - ./src:/src
+  
+  celerybeat:
+    build:
+      context: .
+    command: sh -c "celery -A saas.celery beat --loglevel=INFO"
+    environment:
+      - DB_HOST=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=developer123
+      - DB_PORT=5432
+    depends_on:
+      - app
+      - rabbitmq
+    volumes:
+      - ./src:/src
+
 volumes:
   db-data:
+  rabbitmq-data:
 

@@ -1,8 +1,11 @@
+from unittest.mock import Mock, patch
+
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from ..models import User, Company
+from ..views import get_company_data_from_external_api
 
 
 class UserViewSetTestCase(APITestCase):
@@ -237,3 +240,22 @@ class CompanyViewSetTestCase(APITestCase):
         qty_users_before_post = self.company_django.user.all().count()
         self.client.post(self.registry_member_url, data, format='json')
         self.assertNotEqual(self.company_django.user.all().count(), qty_users_before_post)
+    
+
+class CompanyExternalDataTest(APITestCase):
+    def test_get_company_external_data_returns_right_keys(self):
+        with patch('restapi.views.requests.get') as mock_get:
+            expected_values = {
+                'nome': 'company LTDA',
+                'fantasia': 'company',
+                'situacao': 'Ativa',
+                'cnpj': '99315678901234',
+                'data_situacao': '2019-01-01',
+                'uf': 'SP',
+            }
+
+            mock_get.return_value = Mock(status_code=200)
+            mock_get.return_value.json.return_value = expected_values
+            response = get_company_data_from_external_api('12345678901234')
+
+        self.assertEqual(set(response.keys()), set({'nome', 'fantasia', 'situacao'}))

@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from django.db import IntegrityError
 from django.test import TestCase
 from ..models import User, Company
@@ -100,12 +103,12 @@ class CompanyModelTest(TestCase):
             corporate_name='EC LTDA',
             trade_name='EC',
             cnpj='12345678901234',
+            status='Ativo',
         )
         company.save()
         company.user.add(user)
         cls.company = Company.objects.get(id=1)
         
-
     def test_company_corporate_name_equals_ec_ltda(self):
         self.assertEqual(self.company.corporate_name, 'EC LTDA')
     
@@ -135,3 +138,26 @@ class CompanyModelTest(TestCase):
     
     def test_company_str_returns_corporate_name(self):
         self.assertEqual(str(self.company), 'EC LTDA')
+    
+    def test_is_necessary_to_check_returns_false(self):
+        self.assertFalse(self.company.is_necessary_to_check)
+
+    def test_is_necessary_to_check_returns_true(self):
+        self.company.last_check = timezone.localtime() - timedelta(days=32)
+        self.assertTrue(self.company.is_necessary_to_check)
+    
+    def test_update_company_updates_company_data(self):
+        self.company.update_company(
+            corporate_name='FDD LTDA',
+            trade_name='FDB',
+            status='Inativo',
+        )
+        self.assertNotEqual(self.company.corporate_name, 'ECC LTDA')
+        self.assertNotEqual(self.company.trade_name, 'ECA')
+        self.assertNotEqual(self.company.status, 'Ativo')
+    
+    def test_company_filter_with_is_necessary_to_check_returns_companies(self):
+        self.company.last_check = timezone.localtime() - timedelta(days=32)
+        self.company.save()
+        companies = [company for company in Company.objects.all() if company.is_necessary_to_check]
+        self.assertEqual(len(companies), 1)
