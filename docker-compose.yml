@@ -39,14 +39,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      
     env_file:
       - ./.env
     environment:
-      - DB_HOST=postgres
-      - DB_USER=postgres
-      - DB_PASSWORD=developer123
-      - DB_PORT=5432
       - API_HOST=app
       - PYTHONDONTWRITEBYTECODE=1
     volumes:
@@ -61,11 +56,8 @@ services:
     depends_on:
       - app
       - rabbitmq
-    environment:
-      - DB_HOST=postgres
-      - DB_USER=postgres
-      - DB_PASSWORD=developer123
-      - DB_PORT=5432
+    env_file:
+      - ./.env
     volumes:
       - ./src:/src
   
@@ -73,11 +65,8 @@ services:
     build:
       context: .
     command: sh -c "celery -A saas.celery beat --loglevel=INFO"
-    environment:
-      - DB_HOST=postgres
-      - DB_USER=postgres
-      - DB_PASSWORD=developer123
-      - DB_PORT=5432
+    env_file:
+      - ./.env
     depends_on:
       - app
       - rabbitmq

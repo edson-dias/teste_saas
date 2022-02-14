@@ -77,13 +77,14 @@ def get_company_data_from_external_api(cnpj):
     
     url = f'{entrypoint}cnpj/{cnpj}'
     response = requests.get(url)
-    if response.status_code == 200:
-        response = response.json()
+    response = response.json()
+    if response.get('status') == 'ERROR':
+        raise Exception(f'Não foi possível obter os dados da empresa {cnpj}')
+    else:
         data = {
             'nome': response['nome'],
             'fantasia': response['fantasia'],
             'situacao': response['situacao']
         }
         return data
-    else:
-       raise Exception('Não foi possível obter os dados da empresa')
+    

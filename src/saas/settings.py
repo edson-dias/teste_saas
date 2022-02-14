@@ -1,24 +1,24 @@
 from pathlib import Path
 from celery.schedules import crontab
-from .config import get_django_secret, get_postgres_configs
+from .config import get_django_secret, get_postgres_configs, get_celery_config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = get_django_secret()
 
-CELERY_BROKER_URL = 'amqp://admin:admin123@rabbitmq:5672'
+CELERY_BROKER_URL = get_celery_config()
+CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_BEAT_SCHEDULE = {
     'periodic_companies_maintenance': {
         'task': 'restapi.tasks.periodic_companies_maintenance',
-        'schedule': crontab(),
+        'schedule': crontab(0, 5),
     },
 }
 
+DEBUG = False
 
-DEBUG = True
-
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    'django_celery_results',
     'restapi'
 ]
 

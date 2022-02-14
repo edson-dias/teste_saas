@@ -20,3 +20,10 @@ def get_django_secret():
     secret = os.environ.get('DJANGO_SECRET', get_random_secret_key())
     return secret
 
+
+def get_celery_config():
+    user = os.environ.get('BROKER_USER', 'admin')
+    password = os.environ.get('BROKER_PASSWORD', 'admin123')
+    host = os.environ.get('BROKER_HOST', 'localhost')
+    port = os.environ.get('BROKER_PORT', '5672')
+    return f'amqp://{user}:{password}@{host}:{port}'
