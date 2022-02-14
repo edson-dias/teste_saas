@@ -1,74 +1,131 @@
-# Teste Python - Plataforma SaaS 
+#  **Teste Python - Plataforma SaaS**
 
-## Descrição Teste
+# Descrição
+Considere um cenário em que você precisa cadastrar sua empresa para uma plataforma SaaS. <br>
 
-Considere um cenário em que você precisa cadastrar sua empresa para uma plataforma SaaS. 
-
-Você PODE e DEVE usar bibliotecas de terceiros, usando o framework DJANGO. Lembre-se, um desenvolvedor eficaz sabe o que construir e o que reutilizar.
-
-Na entrevista de "code review", esteja preparado para responder algumas
-perguntas sobre essas bibliotecas, como e por que você as escolheu e com quais outras alternativas você está familiarizado, serão algumas dessas perguntas.
-
-Como este é um processo de "code review", evite adicionar código gerado ao
-projeto (ex: venv).
-
-### **Instruções para o fluxo da aplicação:**
-
-### **Endpoints**
-
-1. **Cadastro de Usuário** → Endpoint para cadastro de novos acessos (primeiro nome, sobrenome, email e senha)
-2. **Cadastro de Empresa** → Endpoint para cadastro de Empresas (usuário, CNPJ, Razão Social e Nome Fantasia). Esse endpoint deve vincular um usuário com uma empresa. Um usuário pode estar em multiplas empresas.
-3. **Login do usuário** → Endpoint para Login (o login precisa ser feito através do e-mail do usuário).
-4. **Cadastro de membros na empresa** → Endpoint para cadastrar novos membros na empresa (ID usuário e ID empresa)
-5. **Listagem de todas as empresas do usuário logado** → Endpoint para trazer todas as empresas pertencentes ao usuário **ESPECÍFICO**. 
-6. **Listagem de membros de uma empresa** → Endpoint para trazer todos os membros de uma empresa **ESPECÍFICA**. ****
-
-### Serviços:
-
-No nosso sistema, todas as empresas possuem dados da receita federal, portanto, devemos sempre atualiza-los mensalmente. 
-
-Após 30 dias da criação de uma empresa, deve-se acessar `https://receitaws.com.br/v1/cnpj/{CNPJ}` ****e atualizar algumas informações, sendo:
-
-- Razão Social
-- Nome Fantasia
-- Status / Situação
-
-Lembrando que: nosso sistema atualiza as informações **MENSALMENTE** e o dia da atualização varia de empresa para empresa. 
-
-Essa atualização deverá ser executada em workers assíncronos baseados em eventos e/ou filas para não bloquear a `thread` principal. 
-
-**OBS:** A api utilizada é pública, portanto, possui limite de requisições. Será usada apenas para fins de testes. 
-
-<aside>
-💡 Um dos principais objetivos deste projeto é ver como você preenche ambiguidades de maneira criativa. Não existe um projeto perfeito aqui, apenas interpretações das instruções acima; portanto, seja criativo em sua abordagem.
-
-</aside>
-
-#### Requisitos mínimos para o teste:
-
-- Código testável e demonstrar isso escrevendo testes (testes unitários)
-- O banco de dados escolhido deve ser relacional (Postgres, MySQL, SQLite e etc)
-- API seguindo os padrões REST
-
-Você NÃO precisa desenvolver um "frontend" (telas) para esse teste
-
-#### Pontos que consideramos um bônus
-
-- Utilizar uma arquitetura de cache
-- Suas respostas durante o code review
-- Utilização de criptografia
-- Uma boa descrição do que foi feito na sua "pull request"
-- Melhores práticas para segurança de APIs e dados
-- Utilizar docker
-- Histórico do seus commits, com mensagens descritivas do que está
-sendo desenvolvido
-- Um bom README
-
-#### Enviando o teste para avaliação
-
-- Faça os commits diretamente na master
-- Faça o push para um repositório publico no github
-- Compartilhe o link do repositório conosco
+Teste realizado na linguagem python, utilizando framework Django.
+Para construção da API Rest foi utilizado a biblioteca Django Rest Framework. <br>
+Para construção dos workers assíncronos, foi utilizada a biblioteca Celery, juntamente com RabbitMQ como broker. <br>
 
 
-## Instalação 
+# Requisitos
+- [Docker](https://docs.docker.com/engine/install/ubuntu/) com [docker-compose](https://docs.docker.com/compose/install/)
+- [Make GNU](https://www.gnu.org/software/make/) (Opcional)
+
+<br></br>
+# Configurações
+
+* Clone ou faça download do repositório.
+```
+    git clone https://github.com/edson-dias/teste_saas
+```
+
+* Entre na pasta teste_saas.
+```
+    cd teste_saas/
+```
+
+### Caso possua a ferramenta Make instalada:
+* Para subir e contruir os containers.
+```
+    make all
+```
+* Para desmontar os containers.
+```
+    make down
+```
+
+### Para usuários sem a ferramenta make
+* Utilize diretamente a ferramenta docker-compose.
+```
+    docker-compose up -d
+```
+Rodando os testes
+```
+    python src/manage.py test
+```
+___
+<br></br>
+
+# Entrypoint e Endpoints da API
+Entrypoint da API: **http://127.0.0.1:8000/api**
+
+* Cadastro de novos usuários
+```
+   Endpoint: /user/
+   Método: POST
+   Necessário Autenticação: Não
+   json: {
+       "first_name": str,
+       "last_name": str,
+       "email": str,
+       "password": str
+   }
+```
+
+* Cadastro de novas empresas
+```
+    Endpoint: /company/
+    Método: POST
+    Necessário Autenticação: Não
+    json: {
+       "corporate_name": str,
+       "trade_name": str,
+       "cnpj": str,
+       "user": int
+   }
+```
+
+* Login de usuários. Retorna token para utilização nos endpoints com autenticação necessária
+```
+    Endpoint: /login/
+    Método: POST
+    Necessário Autenticação: Não
+    json: {
+       "username": str,
+       "password": str,
+   }
+```
+
+* Cadastro de membros na empresas
+```
+    Endpoint: /company/members/registry/
+    Método: POST
+    Necessário Autenticação: Token
+    json: {
+       "company_id": int,
+       "user_id": int,
+   }
+```
+
+* Listagem de todas empresas do usuário logado
+```
+    Endpoint: /user/companies/
+    Método: GET
+    Necessário Autenticação: Token
+    json: {
+       "id": int,
+       "corporate_name": str,
+       "trade_name": str,,
+       "cnpj": str,
+       "user": list
+   }
+```
+
+* Listagem de membros de uma empresa específica
+```
+    Endpoint: /company/<int:id>/members/
+    Método: GET
+    Necessário Autenticação: Token
+    json: {
+       "id": int,
+       "first_name": str,
+       "last_name": str,
+       "email": str
+   }
+```
+
+# Observações
+
+* Arquivo .env contem dados sensíveis da API que não devem ficar expostos. <br>
+Para utilização em produção devem ser gerados novas senhas e usuários assim como uma nova secret_key.

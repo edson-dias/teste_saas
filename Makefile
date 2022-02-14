@@ -2,7 +2,7 @@
 export COMPOSE_DOCKER_CLI_BUILD=1
 export DOCKER_BUILDKIT=1
 
-all: down build up
+all: down build up test
 
 build:
 	docker-compose build
@@ -12,3 +12,6 @@ up:
 
 down:
 	docker-compose down --remove-orphans
+
+test:
+	docker-compose run --rm --no-deps app python manage.py test
