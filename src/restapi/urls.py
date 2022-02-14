@@ -10,7 +10,7 @@ router.register(r'company', CompanyViewSet, basename='company')
 
 api_urls = [
     path('api/', include(router.urls)),
-    path('api/login', obtain_auth_token, name='api_login'),
+    path('api/login/', obtain_auth_token, name='api_login'),
 ]
 
 
